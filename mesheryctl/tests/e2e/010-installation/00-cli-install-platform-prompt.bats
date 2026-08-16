@@ -12,22 +12,19 @@ teardown_file() {
 run_platform_prompt() {
     local input="$1"
     local harness="${BATS_TEST_TMPDIR}/platform-prompt.sh"
-    local input_file="${BATS_TEST_TMPDIR}/platform-input"
-
-    printf '%s' "$input" > "$input_file"
 
     # Keep the test focused on the interactive platform-selection logic. The
     # installer performs downloads and system changes after this block, so
     # stop before the common functions and replace the TTY input source with
-    # an isolated test input file.
+    # stdin for deterministic test input.
     awk '/^####### COMMON FUNCTIONS/{exit} {print}' "$INSTALL_SCRIPT" \
-        | sed 's#read PLATFORM < /dev/tty#read PLATFORM < "$INPUT_FILE"#g' \
+        | sed 's#read PLATFORM < /dev/tty#read PLATFORM#g' \
         > "$harness"
     cat >> "$harness" <<'EOF'
 printf 'SELECTED_PLATFORM=%s\n' "$PLATFORM"
 EOF
 
-    INPUT_FILE="$input_file" bash "$harness"
+    printf '%s' "$input" | bash "$harness"
 }
 
 @test "installer prompts for a platform and accepts docker" {
