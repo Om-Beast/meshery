@@ -1,3 +1,7 @@
+// Meshery Extension Point
+// Add your installable plugins  as a component with the Extension Interface into this extension point.
+// Learn more: https://docs.meshery.io/extensibility/ui
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Grid2, Typography, styled } from '@sistent/sistent';
 import {
@@ -6,10 +10,12 @@ import {
   useInstallProviderExtensionMutation,
   useRemoveProviderExtensionMutation,
 } from '@/rtk-query/user';
+import { Keys } from '@meshery/schemas/permissions';
 import { CardContainer, FrontSideDescription } from 'css/icons.styles';
 import { EVENT_TYPES } from '../../lib/event-types';
 import { useNotification } from '@/utils/hooks';
 import { formatApiError } from '@/utils/helpers/meshkitError';
+import { isLocalProvider } from '@/utils/provider';
 
 type ChildrenProps = {
   children: React.ReactNode;
@@ -33,6 +39,9 @@ type Extension = {
   metadata?: ExtensionMetadata;
 };
 
+// Meshery Extension Point
+// Add your installable plugins  as a component with the Extension Interface into this extension point.
+// Learn more: https://docs.meshery.io/extensibility/ui
 type InstallableExtensionProps = {
   extension: Extension;
 };
@@ -170,7 +179,7 @@ const InstallableExtension: React.FC<InstallableExtensionProps> = ({ extension }
   useEffect(() => setInstalled(installedFromProvider), [installedFromProvider]);
 
   const [isRemoving, setIsRemoving] = useState<boolean>(false);
-  const isLocalProvider = providerCaps?.providerType === 'local';
+  const isLocal = isLocalProvider(providerCaps);
   const isMutating = isInstalling || isRemoving || isRemovingFromProvider;
   const installReady = Boolean(extension.packagePath);
 
@@ -250,19 +259,20 @@ const InstallableExtension: React.FC<InstallableExtensionProps> = ({ extension }
         </UnifiedDescription>
 
         <UnifiedButtonContainer>
-          {!installed && isLocalProvider ? (
+          {!installed && isLocal ? (
             <Button
-              variant={isLocalProvider ? 'contained' : 'outlined'}
+              variant={isLocal ? 'contained' : 'outlined'}
               color="primary"
               onClick={handleInstall}
               data-testid="install-btn"
-              disabled={!isLocalProvider || !installReady || isMutating}
+              disabled={!isLocal || !installReady || isMutating}
+              permissionKey={Keys.ExtensibilityInstallExtension}
             >
               {isInstalling ? 'Installing...' : installReady ? 'Install' : 'Preparing...'}
             </Button>
           ) : (
             <>
-              {isLocalProvider ? (
+              {isLocal ? (
                 <Button
                   variant="outlined"
                   color="secondary"
@@ -270,6 +280,7 @@ const InstallableExtension: React.FC<InstallableExtensionProps> = ({ extension }
                   data-testid="uninstall-btn"
                   disabled={isMutating}
                   sx={{ marginRight: 2 }}
+                  permissionKey={Keys.ExtensibilityUninstallExtension}
                 >
                   {isRemoving || isRemovingFromProvider ? 'Removing...' : 'Remove'}
                 </Button>
@@ -293,7 +304,7 @@ const InstallableExtension: React.FC<InstallableExtensionProps> = ({ extension }
   );
 };
 
-export const KanvasExtension: React.FC = () => {
+export const VisualDesignerExtension: React.FC = () => {
   const { data: mesheryVersionData } = useGetSystemVersionQuery();
   const version = mesheryVersionData?.build ? `${mesheryVersionData.build}-1` : null;
 
@@ -303,7 +314,7 @@ export const KanvasExtension: React.FC = () => {
       ? `https://github.com/meshery-extensions/meshery-extensions-packages/releases/download/${version}/provider-meshery.tar.gz`
       : '',
     title: 'Kanvas',
-    icon: '/static/img/extensions/kanvas.svg',
+    icon: '/static/img/extensions/visual-designer-extension-logo.svg',
     description:
       'Collaboratively design and manage your Kubernetes clusters and Cloud services. Kanvas is a visual interface for managing your infrastructure. It allows you to create, edit, and share your infrastructure as code.',
     metadata: {
